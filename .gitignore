@@ -12,3 +12,4 @@ abstract.txt
 main.py
 pyproject.toml
 uv.lock
+outputs/
