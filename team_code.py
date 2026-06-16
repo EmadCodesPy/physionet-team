@@ -141,8 +141,13 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
 
     params = {
     'objective': 'binary:logistic',
-    'max_depth': 3,
-    'random_state': 369
+    'max_depth': 8,
+    'random_state': 369,
+    'learning_rate': 0.015189769481300321,
+    'n_estimators': 61,
+    'subsample': 0.935749494357665,
+    'colsample_bytree': 0.7638659448622819,
+    'min_child_weight': 9
 }
     
     model = XGBClassifier(**params)
@@ -206,6 +211,157 @@ def run_model(model, record, data_folder, verbose):
     probability_output = model.predict_proba(features)[0][1]
 
     return binary_output, probability_output
+
+def run_loso_cross_validation(data_folder, verbose=True, csv_path=DEFAULT_CSV_PATH):
+    """
+    Leave-One-Site-Out cross-validation.
+    Extracts features once, then loops over sites as held-out folds.
+    Reports per-site and mean AUROC for the CinC abstract.
+    """
+    import numpy as np
+    from sklearn.metrics import roc_auc_score
+    from xgboost import XGBClassifier
+
+    # ------------------------------------------------------------------ #
+    # STEP 1: Extract ALL features once across all three sites            #
+    # ------------------------------------------------------------------ #
+    if verbose:
+        print('Finding the Challenge data...')
+
+    patient_data_file = os.path.join(data_folder, DEMOGRAPHICS_FILE)
+    patient_metadata_list = find_patients(patient_data_file)
+    num_records = len(patient_metadata_list)
+
+    if num_records == 0:
+        raise FileNotFoundError('No data were provided.')
+
+    if verbose:
+        print(f'Found {num_records} records. Extracting features...')
+
+    all_features = []
+    all_labels   = []
+    all_sites    = []   # <-- this is the only addition vs your original loop
+
+    pbar = tqdm(range(num_records), desc="Extracting Features", unit="record", disable=not verbose)
+
+    for i in pbar:
+        try:
+            record     = patient_metadata_list[i]
+            patient_id = record[HEADERS['bids_folder']]
+            site_id    = record[HEADERS['site_id']]
+            session_id = record[HEADERS['session_id']]
+
+            if verbose:
+                pbar.set_postfix({"patient": patient_id, "site": site_id})
+
+            patient_data        = load_demographics(patient_data_file, patient_id, session_id)
+            demographic_features = extract_demographic_features(patient_data)
+
+            algorithmic_annotations_file = os.path.join(
+                data_folder,
+                ALGORITHMIC_ANNOTATIONS_SUBFOLDER,
+                site_id,
+                f"{patient_id}_ses-{session_id}_caisr_annotations.edf"
+            )
+            algorithmic_annotations, algorithmic_fs = load_signal_data(algorithmic_annotations_file)
+            algorithmic_features = extract_algorithmic_annotations_features(algorithmic_annotations)
+
+            label = load_diagnoses(patient_data_file, patient_id)
+
+            if label == 0 or label == 1:
+                all_features.append(np.hstack([demographic_features, algorithmic_features]))
+                all_labels.append(label)
+                all_sites.append(site_id)   # store site for LOSO grouping
+
+        except Exception as e:
+            tqdm.write(f"  !!! Error on record {i+1} ({patient_id}): {e}")
+            continue
+
+    pbar.close()
+
+    all_features = np.asarray(all_features, dtype=np.float32)
+    all_labels   = np.asarray(all_labels,   dtype=bool)
+    all_sites    = np.asarray(all_sites)
+
+    if verbose:
+        print(f'\nFeature matrix shape: {all_features.shape}')
+        unique, counts = np.unique(all_sites, return_counts=True)
+        for s, c in zip(unique, counts):
+            pos = all_labels[all_sites == s].sum()
+            print(f'  Site {s}: {c} patients, {pos} positive ({100*pos/c:.1f}%)')
+
+    # ------------------------------------------------------------------ #
+    # STEP 2: LOSO loop                                                   #
+    # ------------------------------------------------------------------ #
+    if verbose:
+        print('\nRunning Leave-One-Site-Out Cross-Validation...')
+
+    unique_sites = np.unique(all_sites)
+    fold_results = {}
+
+    for held_out_site in unique_sites:
+
+        train_mask = (all_sites != held_out_site)
+        test_mask  = (all_sites == held_out_site)
+
+        X_train = all_features[train_mask]
+        y_train = all_labels[train_mask]
+        X_test  = all_features[test_mask]
+        y_test  = all_labels[test_mask]
+
+        if verbose:
+            print(f'\n  Fold — Hold out: {held_out_site}')
+            print(f'    Train: {X_train.shape[0]} patients | Test: {X_test.shape[0]} patients')
+            print(f'    Test prevalence: {y_test.sum()}/{len(y_test)} ({100*y_test.mean():.1f}%)')
+
+        # Same XGBoost params as your train_model
+        params = {
+            'objective':    'binary:logistic',
+            'max_depth':    3,
+            'random_state': 369
+        }
+        model = XGBClassifier(**params)
+        model.fit(X_train, y_train)
+
+        # Get probability scores (not binary predictions) for AUROC
+        y_prob = model.predict_proba(X_test)[:, 1]
+
+        # Check we have both classes in test fold — AUROC undefined otherwise
+        if len(np.unique(y_test)) < 2:
+            print(f'    WARNING: Only one class in held-out site {held_out_site}. Skipping AUROC.')
+            continue
+
+        auroc = roc_auc_score(y_test, y_prob)
+        fold_results[held_out_site] = auroc
+
+        if verbose:
+            print(f'    AUROC: {auroc:.4f}')
+        from sklearn.metrics import roc_auc_score
+        y_prob_flipped = 1 - y_prob
+        auroc_flipped = roc_auc_score(y_test, y_prob_flipped)
+        print(f'Flipped AUROC: {auroc_flipped:.4f}')
+        
+
+
+    # ------------------------------------------------------------------ #
+    # STEP 3: Summary — this is what goes in your abstract               #
+    # ------------------------------------------------------------------ #
+    print('\n' + '='*50)
+    print('LOSO CROSS-VALIDATION RESULTS')
+    print('='*50)
+    for site, auroc in fold_results.items():
+        print(f'  Held-out site {site}: AUROC = {auroc:.4f}')
+
+    auroc_values = list(fold_results.values())
+    mean_auroc   = np.mean(auroc_values)
+    std_auroc    = np.std(auroc_values)
+    print(f'\n  Mean AUROC: {mean_auroc:.4f} ± {std_auroc:.4f}')
+    print('='*50)
+    print('\nAbstract line to use:')
+    print(f'  "Leave-one-site-out cross-validation on the training set yielded')
+    print(f'   a mean AUROC of {mean_auroc:.3f} (±{std_auroc:.3f}) across {len(fold_results)} sites."')
+
+    return fold_results, mean_auroc, std_auroc
 
 ################################################################################
 #
@@ -412,7 +568,7 @@ def extract_physiological_features(physiological_data, physiological_fs, csv_pat
 def extract_algorithmic_annotations_features(algo_data):
     """
     Extracts sleep architecture and event density features from CAISR outputs.
-    Output vector length: 12
+    Output vector length: 25
     """
     
     out = np.full(25, np.nan)
@@ -566,3 +722,10 @@ def save_model(model_folder, model):
     d = {'model': model}
     filename = os.path.join(model_folder, 'model.sav')
     joblib.dump(d, filename, protocol=0)
+    
+DATA_FOLDER  = "/mnt/ml/datasets/physionet_data/training_set"
+
+fold_results, mean_auroc, std_auroc = run_loso_cross_validation(
+    data_folder=DATA_FOLDER,
+    verbose=True
+)

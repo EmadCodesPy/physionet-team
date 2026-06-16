@@ -1,0 +1,19 @@
+Cross-Site Evaluation of Demographic and Sleep-Annotation Features from Polysomnography for Cognitive Impairment Prediction
+Anas Noufal, Emadaddin Al-Qadasi, Florian F Keuren, Marc VP Garcia, Mykhailo Bratskov
+Eindhoven University of Technology, Eindhoven, Netherlands
+
+Polysomnography (PSG) captures multimodal physiological signals during sleep that may reflect early markers of neurological dysfunction and future cognitive impairment. However, the generalizability of commonly used PSG-derived summary features across clinical sites remains unclear. We evaluate this question using demographic and sleep-annotation features in a cross-site binary classification task.
+We constructed a 35-dimensional feature representation combining demographic variables (age, sex, race, body mass index) with sleep architecture metrics, including stage proportions (Wake, N1, N2, N3, REM), sleep efficiency, respiratory indices (apnea-hypopnea index), arousal and limb movement indices, REM-specific event counts, and summary statistics of event durations. Features were derived from automated CAISR PSG annotations. Missing annotation channels across recordings were handled via NaN-padding, preserving feature dimensionality across heterogeneous sites. A gradient-boosted decision tree model (XGBoost, maximum depth 3, binary logistic objective) was trained for classification.
+To evaluate robustness under dataset shift, we performed leave-one-site-out cross-validation across three clinical sites (S0001, I0002, I0006). The model achieved a mean AUROC of 0.551 (±0.031), with per-site AUROCs of 0.562, 0.507, and 0.562. The official submission score was 0.404, with post hoc analysis identifying a label encoding error affecting submitted predictions; corrected cross-validation results are reported above. Performance remained close to chance despite inclusion of clinically motivated sleep architecture and physiological summary features.
+These findings indicate that standard PSG-derived summary features and demographic variables provide limited predictive value for cross-site generalization in cognitive impairment risk prediction. The results further suggest that improving performance likely requires more expressive representations of raw physiological signals, including EEG, ECG-derived heart rate variability, and respiratory waveform morphology, to capture subtler temporal and spectral dynamics not represented in summary annotations. Team Neurion, Eindhoven University of Technology.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------z
+
+Submission:
+
+Reference Information for Submission #364
+
+Title: 	Cross-Site Evaluation of Demographic and Sleep-Annotation Features from Polysomnography for Cognitive Impairment Prediction
+Authors: 	Aans Noufal, Emadaddin Al-Qadasi, Florian Finn Keuren, Marc Volpe-Prignano Garcia and Mykhailo Bratskov
+Passcode: 	364X-J5G8J6E5J6
+Confirmation Number:	364

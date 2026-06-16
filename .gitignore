@@ -6,3 +6,9 @@ scores.txt
 *.egg-info/
 .venv/
 split.py
+temp.py
+abstract.txt
+.python-version
+main.py
+pyproject.toml
+uv.lock

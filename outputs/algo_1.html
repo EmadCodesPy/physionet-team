@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhysioNet 2026 — Team Brief</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&family=Fraunces:opsz,wght@9..144,300;9..144,600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0b0e17;
+    --surface:   #111520;
+    --surface2:  #171c2e;
+    --border:    #1e2540;
+    --accent:    #4f8ef7;
+    --accent2:   #7dd3c0;
+    --warn:      #f0a05a;
+    --danger:    #e05c6a;
+    --success:   #5ac27a;
+    --muted:     #4a5270;
+    --text:      #cdd5f0;
+    --text-dim:  #7a84a8;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+    --serif:     'Fraunces', serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 0 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(79,142,247,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 300;
+    color: #e8eeff;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent2);
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 28px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .meta-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  nav a {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 14px 18px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  nav a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── LAYOUT ── */
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 56px 40px 80px;
+  }
+
+  section {
+    margin-bottom: 64px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 300;
+    color: #dce4ff;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin: 32px 0 12px;
+  }
+
+  p {
+    color: var(--text);
+    margin-bottom: 14px;
+    max-width: 72ch;
+  }
+
+  /* ── ALERT BOXES ── */
+  .alert {
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    border-left: 3px solid;
+    font-size: 14px;
+  }
+
+  .alert-danger  { background: rgba(224,92,106,0.07); border-color: var(--danger);  color: #f0b0b7; }
+  .alert-warn    { background: rgba(240,160,90,0.07);  border-color: var(--warn);   color: #f5c890; }
+  .alert-success { background: rgba(90,194,122,0.07);  border-color: var(--success); color: #9adbb0; }
+  .alert-info    { background: rgba(79,142,247,0.07);  border-color: var(--accent);  color: #a0bef8; }
+
+  .alert strong {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+    opacity: 0.8;
+  }
+
+  /* ── TABLES ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 20px 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  thead tr {
+    background: var(--surface2);
+  }
+
+  th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--text);
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+
+  tbody tr:hover { background: rgba(79,142,247,0.04); }
+
+  td code, th code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: var(--accent2);
+  }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  .badge-high    { background: rgba(224,92,106,0.15); color: var(--danger); }
+  .badge-med     { background: rgba(240,160,90,0.15); color: var(--warn); }
+  .badge-low     { background: rgba(90,194,122,0.15); color: var(--success); }
+  .badge-info    { background: rgba(79,142,247,0.15); color: var(--accent); }
+  .badge-caution { background: rgba(125,211,192,0.15); color: var(--accent2); }
+
+  /* ── CODE BLOCKS ── */
+  pre {
+    background: #090c14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 22px;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #b8c4e8;
+  }
+
+  .comment { color: var(--muted); }
+  .key     { color: var(--accent); }
+  .val     { color: var(--accent2); }
+  .str     { color: #f0b07a; }
+
+  /* ── NEXT STEPS ── */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+
+  .step-card:hover { border-color: var(--accent); }
+
+  .step-num {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--border);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .step-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #dce4ff;
+    margin-bottom: 8px;
+  }
+
+  .step-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  .step-tag {
+    display: inline-block;
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+
+  .tag-blocking  { background: rgba(224,92,106,0.15); color: var(--danger); }
+  .tag-feature   { background: rgba(79,142,247,0.15);  color: var(--accent); }
+  .tag-verify    { background: rgba(240,160,90,0.15);  color: var(--warn); }
+  .tag-pipeline  { background: rgba(90,194,122,0.15);  color: var(--success); }
+
+  /* ── SIGNAL DIAGRAM ── */
+  .signal-diagram {
+    background: #090c14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    margin: 20px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .sig-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(30,37,64,0.6);
+  }
+
+  .sig-row:last-child { border-bottom: none; }
+
+  .sig-name {
+    color: var(--accent2);
+    min-width: 190px;
+    font-size: 12px;
+  }
+
+  .sig-type {
+    color: var(--warn);
+    min-width: 110px;
+    font-size: 11px;
+  }
+
+  .sig-action {
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  /* ── AGREEMENT BAR ── */
+  .agree-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 8px 0;
+  }
+
+  .agree-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 60px;
+  }
+
+  .agree-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 320px;
+  }
+
+  .agree-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .agree-pct {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    min-width: 44px;
+    text-align: right;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 40px;
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  footer span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 640px) {
+    .header-inner, main, footer { padding-left: 20px; padding-right: 20px; }
+    .nav-inner { padding-left: 20px; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .sig-type, .sig-action { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="eyebrow">George B. Moody PhysioNet Challenge 2026</div>
+    <h1>CAISR Annotation Analysis<br><em>Team Briefing — Feature Engineering Phase</em></h1>
+    <p style="color:var(--text-dim); max-width:60ch; margin-top:10px;">
+      Concrete findings from annotation format investigation. Covers signal structure, encoding verification, reliability estimates, and actionable next steps for the full team.
+    </p>
+    <div class="header-meta">
+      <span class="meta-pill">Phase 1 — EDA Complete</span>
+      <span class="meta-pill">Phase 2 — Feature Engineering Active</span>
+      <span class="meta-pill">Training set · 622 recordings · 3 sites</span>
+      <span class="meta-pill">Metric · AUROC</span>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#task">Task</a>
+    <a href="#format">CAISR Format</a>
+    <a href="#encoding">Encoding</a>
+    <a href="#reliability">Reliability</a>
+    <a href="#features">Features</a>
+    <a href="#decisions">Decisions</a>
+    <a href="#nextsteps">Next Steps</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ── SECTION 1: TASK ── -->
+  <section id="task">
+    <div class="section-label">01 — Context</div>
+    <h2>What We Are Solving</h2>
+
+    <p>Binary classification: given one overnight polysomnography (PSG) recording per patient, predict whether they will develop cognitive impairment (MCI, Alzheimer's, or dementia) within 3–7 years. Evaluated by AUROC on a hidden test set from a site never seen in training.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Split</th><th>Site(s)</th><th>N recordings</th><th>Label balance</th><th>Available to us?</th></tr></thead>
+        <tbody>
+          <tr><td>Training</td><td>S0001, I0006, I0002</td><td>622</td><td>50 / 50</td><td><span class="badge badge-low">Yes</span></td></tr>
+          <tr><td>Supplementary</td><td>I0004, I0007</td><td>~20 (10 each)</td><td>Unknown</td><td><span class="badge badge-low">Yes — no labels</span></td></tr>
+          <tr><td>Validation (hidden)</td><td>I0004</td><td>Unknown</td><td>~5–15% CI</td><td><span class="badge badge-high">No</span></td></tr>
+          <tr><td>Test (hidden)</td><td>I0007</td><td>Unknown</td><td>~5–15% CI</td><td><span class="badge badge-high">No</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-danger">
+      <strong>Critical constraint</strong>
+      Validation and test sets are entirely new sites. Any feature that encodes site-specific recording protocol rather than biology will fail on these sets — even if it looks great in training CV.
+    </div>
+
+    <div class="alert alert-info">
+      <strong>Why PSG predicts cognitive impairment</strong>
+      Sleep is when the brain clears amyloid-beta and tau proteins via the glymphatic system — the same proteins that accumulate in Alzheimer's. Disrupted sleep architecture means less clearance, which accelerates protein accumulation over years. PSG features that capture sleep disruption are therefore biologically motivated predictors.
+    </div>
+  </section>
+
+  <!-- ── SECTION 2: FORMAT ── -->
+  <section id="format">
+    <div class="section-label">02 — Format Discovery</div>
+    <h2>CAISR Annotation Format</h2>
+
+    <div class="alert alert-warn">
+      <strong>Key finding — not what we expected</strong>
+      CAISR annotations are NOT stored as discrete events with onset/duration. They are stored as 11 continuous signal channels at 2 Hz. Feature extraction is array operations, not event parsing.
+    </div>
+
+    <h3>File Specs (verified on I0002 recording)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Property</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Sample rate</td><td><code>2.0 Hz</code> — one value every 0.5 seconds</td></tr>
+          <tr><td>Total samples (6.1 hr recording)</td><td><code>43,920</code></td></tr>
+          <tr><td>Data shape</td><td><code>(11 channels × 43,920 samples)</code></td></tr>
+          <tr><td>Annotation count</td><td><code>0</code> — confirms signal-based, not event-based</td></tr>
+          <tr><td>Human annotation file</td><td>Separate EDF with 4 channels — same 2 Hz format</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Channel Inventory and Decoding Strategy</h3>
+    <div class="signal-diagram">
+      <div class="sig-row" style="border-bottom:1px solid var(--border); margin-bottom:6px;">
+        <span class="sig-name" style="color:var(--muted);">CHANNEL</span>
+        <span class="sig-type" style="color:var(--muted);">TYPE</span>
+        <span class="sig-action" style="color:var(--muted);">HOW TO USE</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">stage_caisr</span>
+        <span class="sig-type">argmax / float noise</span>
+        <span class="sig-action">round → int → decode stage label</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">caisr_prob_w</span>
+        <span class="sig-type">logit (pre-softmax)</span>
+        <span class="sig-action">apply softmax across 5 prob channels → true probability</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">caisr_prob_n1</span>
+        <span class="sig-type">logit (pre-softmax)</span>
+        <span class="sig-action">↑ same — softmax together with all 5</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">caisr_prob_n2</span>
+        <span class="sig-type">logit (pre-softmax)</span>
+        <span class="sig-action">↑ same</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">caisr_prob_n3</span>
+        <span class="sig-type">logit (pre-softmax)</span>
+        <span class="sig-action">↑ same</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">caisr_prob_r</span>
+        <span class="sig-type">logit (pre-softmax)</span>
+        <span class="sig-action">↑ same — R = REM</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">caisr_prob_arous</span>
+        <span class="sig-type">probability 0–1</span>
+        <span class="sig-action">use directly — already a probability</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">caisr_prob_no-ar</span>
+        <span class="sig-type">probability 0–1</span>
+        <span class="sig-action">complement of arous — 1 − arous ≈ no-ar</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">arousal_caisr</span>
+        <span class="sig-type">clean binary 0/1</span>
+        <span class="sig-action">use directly — no transformation needed</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">resp_caisr</span>
+        <span class="sig-type">float-encoded int</span>
+        <span class="sig-action">round → int → decode respiratory event type</span>
+      </div>
+      <div class="sig-row">
+        <span class="sig-name">limb_caisr</span>
+        <span class="sig-type">float-encoded int</span>
+        <span class="sig-action">round → int → use cautiously (over-detects vs human)</span>
+      </div>
+    </div>
+
+    <p style="margin-top:8px; color:var(--text-dim); font-size:13px;">
+      The five <code>caisr_prob_*</code> channels contain raw logits — unbounded values that go negative and above 10. Applying softmax across all five at each time point converts them to proper probabilities that sum to 1. These probability channels enable uncertainty-aware features that <code>stage_caisr</code> alone cannot provide.
+    </p>
+  </section>
+
+  <!-- ── SECTION 3: ENCODING ── -->
+  <section id="encoding">
+    <div class="section-label">03 — Encoding Verification</div>
+    <h2>Integer Encoding — Empirically Verified</h2>
+
+    <p>Encodings were verified by cross-tabulating CAISR values against human scorer values for the same recording — not assumed from documentation.</p>
+
+    <h3>Stage Encoding (stage_caisr / stage_expert)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Integer</th><th>Stage</th><th>CAISR % (I0002 sample)</th><th>Human % (I0002 sample)</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>Unscored / lights on</td><td>0.1%</td><td>0.0%</td><td><span class="badge badge-info">Verified</span></td></tr>
+          <tr><td><code>1</code></td><td>N1 — light sleep</td><td>4.5%</td><td>8.1%</td><td><span class="badge badge-info">Verified</span></td></tr>
+          <tr><td><code>2</code></td><td>N2 — intermediate sleep</td><td>58.9%</td><td>45.4%</td><td><span class="badge badge-info">Verified</span></td></tr>
+          <tr><td><code>3</code></td><td>N3 — deep sleep</td><td>10.9%</td><td>19.6%</td><td><span class="badge badge-info">Verified</span></td></tr>
+          <tr><td><code>4</code></td><td>REM</td><td>5.7%</td><td>6.6%</td><td><span class="badge badge-info">Verified</span></td></tr>
+          <tr><td><code>5</code></td><td>Wake</td><td>18.5%</td><td>18.0%</td><td><span class="badge badge-info">Verified</span></td></tr>
+          <tr><td><code>6–10</code></td><td>Ambiguous / artifact / movement</td><td>~1.3%</td><td>~2.5%</td><td><span class="badge badge-warn">Treat as unknown</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-warn">
+      <strong>Counterintuitive</strong>
+      Wake = 5, not 0. Value 0 means unscored / lights-on epochs (before the patient tries to sleep). Do not confuse these — getting this wrong corrupts sleep efficiency and total sleep time for every recording.
+    </div>
+
+    <h3>Respiratory Event Encoding (resp_caisr)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Integer</th><th>Likely meaning</th><th>CAISR %</th><th>Human %</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>No event — normal breathing</td><td>73.9%</td><td>61.9%</td><td><span class="badge badge-info">Verified</span></td></tr>
+          <tr><td><code>1–6</code></td><td>Respiratory event types (apnea, hypopnea variants)</td><td>~26%</td><td>varies</td><td><span class="badge badge-high">Needs documentation lookup</span></td></tr>
+          <tr><td><code>−1</code></td><td>Artifact / unscored</td><td>0.2%</td><td>1.2%</td><td><span class="badge badge-caution">Treat as missing</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-danger">
+      <strong>Blocking item — resp encoding is incomplete</strong>
+      Human scoring has values up to 12. CAISR only goes to 6. The exact mapping of values 1–6 to respiratory event types (obstructive apnea, central apnea, hypopnea, etc.) must be confirmed from PhysioNet documentation before writing AHI or apnea features. See next steps.
+    </div>
+
+    <h3>Limb Movement Encoding (limb_caisr)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Integer</th><th>Meaning</th><th>CAISR %</th><th>Human %</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>No limb movement</td><td>87.4%</td><td>98.8%</td><td>—</td></tr>
+          <tr><td><code>1</code></td><td>Limb movement</td><td>5.5%</td><td>0.5%</td><td><span class="badge badge-high">Over-detects 11×</span></td></tr>
+          <tr><td><code>2</code></td><td>Limb movement variant</td><td>6.5%</td><td>0.7%</td><td><span class="badge badge-high">Over-detects 9×</span></td></tr>
+          <tr><td><code>−1</code></td><td>Artifact</td><td>0.3%</td><td>0%</td><td>Treat as missing</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION 4: RELIABILITY ── -->
+  <section id="reliability">
+    <div class="section-label">04 — Reliability Assessment</div>
+    <h2>CAISR vs Human Scorer Agreement</h2>
+
+    <p>Overall sample-level stage agreement: <strong style="color:var(--accent);">64.1%</strong>. This is typical for automated vs human PSG scoring. However, agreement varies strongly by stage — which means feature confidence varies by stage.</p>
+
+    <h3>Per-Stage Agreement (derived from cross-tab, I0002 sample)</h3>
+
+    <div class="agree-row">
+      <span class="agree-label">N2</span>
+      <div class="agree-bar-bg"><div class="agree-bar-fill" style="width:87%"></div></div>
+      <span class="agree-pct">~87%</span>
+      <span class="badge badge-low" style="margin-left:8px;">High confidence</span>
+    </div>
+    <div class="agree-row">
+      <span class="agree-label">Wake</span>
+      <div class="agree-bar-bg"><div class="agree-bar-fill" style="width:82%"></div></div>
+      <span class="agree-pct">~82%</span>
+      <span class="badge badge-low" style="margin-left:8px;">High confidence</span>
+    </div>
+    <div class="agree-row">
+      <span class="agree-label">N1</span>
+      <div class="agree-bar-bg"><div class="agree-bar-fill" style="width:41%"></div></div>
+      <span class="agree-pct">~41%</span>
+      <span class="badge badge-high" style="margin-left:8px;">Low confidence</span>
+    </div>
+    <div class="agree-row">
+      <span class="agree-label">N3</span>
+      <div class="agree-bar-bg"><div class="agree-bar-fill" style="width:27%"></div></div>
+      <span class="agree-pct">~27%</span>
+      <span class="badge badge-high" style="margin-left:8px;">Low confidence</span>
+    </div>
+    <div class="agree-row">
+      <span class="agree-label">REM</span>
+      <div class="agree-bar-bg"><div class="agree-bar-fill" style="width:13%"></div></div>
+      <span class="agree-pct">~13%</span>
+      <span class="badge badge-high" style="margin-left:8px;">Very low confidence</span>
+    </div>
+
+    <div class="alert alert-warn" style="margin-top:24px;">
+      <strong>Important implication for feature engineering</strong>
+      N3 and REM agreement is poor. Features derived from these stages (e.g. N3%, REM AHI) are noisier than they appear. This does NOT mean exclude them — N3 and REM are biologically the most important stages for predicting CI. It means: use the probability channels (<code>caisr_prob_n3</code>, <code>caisr_prob_r</code>) to build uncertainty-weighted features rather than relying solely on hard stage labels.
+    </div>
+
+    <div class="alert alert-danger">
+      <strong>Limb movement — do not use raw counts</strong>
+      CAISR over-detects limb movements by approximately 10× compared to human scoring. Raw limb event counts are unreliable. If limb features are used, they must be normalised or engineered carefully. Low priority until resp and stage features are complete.
+    </div>
+
+    <div class="alert alert-info">
+      <strong>Note on sample size</strong>
+      These agreement figures are from one recording (I0002). They should be recomputed across all training recordings with human annotations before treating them as definitive. The pattern is likely consistent but magnitudes may shift.
+    </div>
+  </section>
+
+  <!-- ── SECTION 5: FEATURES ── -->
+  <section id="features">
+    <div class="section-label">05 — Feature Roadmap</div>
+    <h2>Feature Families — Priority Order</h2>
+
+    <p>Every feature must pass three tests before implementation: (1) biologically motivated, (2) site-robust, (3) computable from CAISR. Features failing any test are deprioritised.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Priority</th><th>Family</th><th>Features</th><th>Source channel</th><th>Confidence</th><th>Phase</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-high">P1</span></td>
+            <td>Sleep Architecture</td>
+            <td>N2%, N3%, REM%, Wake%, sleep efficiency, WASO, total sleep time, sleep latency</td>
+            <td><code>stage_caisr</code></td>
+            <td>N2/Wake high · N3/REM low</td>
+            <td>Baseline</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-high">P1</span></td>
+            <td>Stage Uncertainty</td>
+            <td>Mean N3 confidence, mean REM confidence, uncertainty entropy per epoch, % epochs where top-2 stages within 0.1 prob</td>
+            <td><code>caisr_prob_*</code> (softmax)</td>
+            <td>Unique to this approach</td>
+            <td>Baseline</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-med">P2</span></td>
+            <td>Sleep Fragmentation</td>
+            <td>Arousal index (arousals/hr), stage transition count, number of awakenings, mean arousal probability</td>
+            <td><code>arousal_caisr</code>, <code>stage_caisr</code></td>
+            <td>Arousal binary clean</td>
+            <td>Baseline</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-med">P2</span></td>
+            <td>Respiratory Events</td>
+            <td>AHI, obstructive apnea index, hypopnea index, REM-specific AHI</td>
+            <td><code>resp_caisr</code></td>
+            <td><span class="badge badge-high">Blocked — encoding TBD</span></td>
+            <td>Baseline</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-low">P3</span></td>
+            <td>Demographics</td>
+            <td>Age, sex, BMI value, BMI missingness flag, race/ethnicity (handle carefully)</td>
+            <td>demographics CSV</td>
+            <td>High — already clean</td>
+            <td>Baseline</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-low">P4</span></td>
+            <td>Temporal / Structural</td>
+            <td>N3 trend across night halves, REM cycle timing, sleep stage sequence regularity</td>
+            <td><code>stage_caisr</code></td>
+            <td>Harder to make site-robust</td>
+            <td>Iteration</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-low">P4</span></td>
+            <td>Limb Movements</td>
+            <td>PLMI (periodic limb movement index)</td>
+            <td><code>limb_caisr</code></td>
+            <td><span class="badge badge-high">Low — 10× over-detection</span></td>
+            <td>Iteration</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The Decoder Function — Foundation of All Feature Code</h3>
+    <p>This function must be written first and used by every feature extraction call. It standardises the raw CAISR EDF into clean arrays that feature functions can consume directly.</p>
+
+    <pre><span class="comment"># Target output of decode_caisr(path) — not yet written</span>
+{
+  <span class="str">'stage'</span>:        <span class="val">int array, shape (n_samples,), values 0–10</span>,
+  <span class="str">'stage_probs'</span>:  <span class="val">float array, shape (n_samples, 5), after softmax</span>,
+                  <span class="comment"># columns: [W, N1, N2, N3, REM]</span>
+  <span class="str">'arousal'</span>:      <span class="val">binary array, shape (n_samples,), clean 0/1</span>,
+  <span class="str">'resp'</span>:         <span class="val">int array, shape (n_samples,), values −1 to 6</span>,
+  <span class="str">'limb'</span>:         <span class="val">int array, shape (n_samples,), values −1 to 3</span>,
+  <span class="str">'sfreq'</span>:        <span class="val">2.0</span>,
+  <span class="str">'duration_hrs'</span>: <span class="val">float</span>
+}</pre>
+  </section>
+
+  <!-- ── SECTION 6: DECISIONS ── -->
+  <section id="decisions">
+    <div class="section-label">06 — Architecture Decisions</div>
+    <h2>Confirmed Decisions Log</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Decision</th><th>Rationale</th><th>Ruled out</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>CAISR annotations as primary feature source</td>
+            <td>Available for all sets including hidden val/test. Portable, fast to extract.</td>
+            <td>Starting with raw EEG signal processing</td>
+          </tr>
+          <tr>
+            <td>Site-stratified (leave-one-site-out) CV only</td>
+            <td>Val/test are entirely new sites. Random CV gives falsely optimistic scores.</td>
+            <td>Random k-fold CV</td>
+          </tr>
+          <tr>
+            <td>Channel harmonisation layer before any feature code</td>
+            <td>Same signal has different names across sites (SaO2 ↔ SpO2, etc.)</td>
+            <td>Hardcoded channel names per site</td>
+          </tr>
+          <tr>
+            <td>BMI: value + binary missingness flag</td>
+            <td>37% missing — missingness itself may be informative. Dropping rows loses too much data.</td>
+            <td>Dropping missing rows; simple median imputation</td>
+          </tr>
+          <tr>
+            <td>Probability channels via softmax, not just stage_caisr</td>
+            <td>Uncertainty-aware features not possible from hard labels alone. N3/REM agreement is poor.</td>
+            <td>Using only rounded stage_caisr integer</td>
+          </tr>
+          <tr>
+            <td>All outputs to /mnt/ml/</td>
+            <td>Main partition 92% full. /mnt/ml/ has 90 GB free.</td>
+            <td>Saving to home directory</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION 7: NEXT STEPS ── -->
+  <section id="nextsteps">
+    <div class="section-label">07 — Action Items</div>
+    <h2>Next Steps — Priority Order</h2>
+
+    <div class="steps-grid">
+
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Confirm resp_caisr encoding</div>
+        <div class="step-desc">Look up the CAISR paper or PhysioNet 2026 documentation to confirm what values 1–6 map to in resp_caisr (obstructive apnea, central apnea, hypopnea, etc.). Check moody-challenge.physionet.org/2026/</div>
+        <span class="step-tag tag-blocking">Blocking</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Write decode_caisr()</div>
+        <div class="step-desc">Single utility function that takes a CAISR EDF path and returns a clean decoded dictionary. Must handle: rounding float-encoded ints, applying softmax to logit channels, returning binary arousal array. Every other feature function calls this.</div>
+        <span class="step-tag tag-pipeline">Pipeline foundation</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">Extract Family 1 — Sleep Architecture</div>
+        <div class="step-desc">Compute per-recording: N2%, N3%, REM%, Wake%, sleep efficiency, WASO, total sleep time, sleep latency. Exclude unscored epochs (value 0) and ambiguous epochs (6–10) from all calculations. Run across all 622 training recordings.</div>
+        <span class="step-tag tag-feature">Feature extraction</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-title">Extract Family 1b — Uncertainty Features</div>
+        <div class="step-desc">Apply softmax to the 5 logit channels. Compute: mean N3 probability, mean REM probability, mean prediction entropy per recording, % of epochs where model is uncertain between two stages. These are novel features most teams won't build.</div>
+        <span class="step-tag tag-feature">Feature extraction</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">05</div>
+        <div class="step-title">Extract Family 2 — Fragmentation</div>
+        <div class="step-desc">Compute: arousal index (arousals per hour of sleep), stage transition count per hour, number of discrete awakenings after sleep onset. arousal_caisr is clean binary — this is straightforward.</div>
+        <span class="step-tag tag-feature">Feature extraction</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">06</div>
+        <div class="step-title">Extract Family 3 — Respiratory</div>
+        <div class="step-desc">Blocked on step 01. Once resp encoding confirmed: compute AHI, obstructive apnea index, hypopnea index, and REM-specific AHI. AHI = (apneas + hypopneas) per hour of sleep.</div>
+        <span class="step-tag tag-blocking">Blocked on 01</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">07</div>
+        <div class="step-title">Merge with demographics</div>
+        <div class="step-desc">Join feature table with demographics CSV on recording ID. Add BMI missingness binary flag. Final feature table: one row per recording, all numeric, no nulls except handled missingness columns.</div>
+        <span class="step-tag tag-pipeline">Data assembly</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">08</div>
+        <div class="step-title">Feature sanity check per site</div>
+        <div class="step-desc">For every feature, compare distributions across S0001, I0006, I0002. Flag any feature where site explains more variance than the CI label — that feature is encoding protocol, not biology, and will fail on hidden sets.</div>
+        <span class="step-tag tag-verify">Validation</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">09</div>
+        <div class="step-title">Supplementary set EDA</div>
+        <div class="step-desc">Run lightweight channel inventory on I0004 and I0007 supplementary files. Extend channel harmonisation map with any new name variants. These sites are the only preview of the hidden val/test domains.</div>
+        <span class="step-tag tag-verify">Domain recon</span>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">10</div>
+        <div class="step-title">Baseline model</div>
+        <div class="step-desc">GBM (XGBoost or LightGBM) on demographics + Family 1 + Family 2 features. Site-stratified CV. Establish a baseline AUROC before adding complexity. This is the reference point for every subsequent ablation.</div>
+        <span class="step-tag tag-pipeline">Modelling</span>
+      </div>
+
+    </div>
+
+    <div class="alert alert-info" style="margin-top:32px;">
+      <strong>Stack reminder</strong>
+      Python 3.12.12 · MNE 1.12.1 · pandas 3.0.3 · numpy 2.4.6 · matplotlib 3.10.9 · uv package manager. No seaborn. No pyedflib. All outputs → <code>/mnt/ml/</code> (not home directory — main partition 92% full).
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>PhysioNet Challenge 2026 — Team Brief</span>
+  <span>Feature Engineering Phase · June 2026</span>
+  <span>Generated from active mentor session</span>
+</footer>
+
+</body>
+</html>
