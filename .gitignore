@@ -7,9 +7,4 @@ scores.txt
 .venv/
 split.py
 temp.py
-abstract.txt
-.python-version
-main.py
-pyproject.toml
-uv.lock
 outputs/
