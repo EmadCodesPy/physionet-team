@@ -9,8 +9,8 @@ from tqdm import tqdm
 import multiprocessing
 import time
 import sys
-sys.path.append("../")
-from utils import load_data, save_data
+#sys.path.append("../")
+from ...utils import load_data, save_data
 import pandas as pd
 import json
 from loguru import logger
