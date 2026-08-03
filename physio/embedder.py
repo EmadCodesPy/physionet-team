@@ -8,9 +8,9 @@ from torch.utils.data import DataLoader
 import numpy as np
 
 # SleepFM imports
-from sleepfm.utils import load_config, load_data
-from sleepfm.models.dataset import SetTransformerDataset, collate_fn
-from sleepfm.models.models import SetTransformer
+from .sleepfm.utils import load_config, load_data
+from .sleepfm.models.dataset import SetTransformerDataset, collate_fn
+from .sleepfm.models.models import SetTransformer
 
 
 # ============================================================
