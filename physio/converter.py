@@ -2,7 +2,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 from scipy.signal import resample_poly
-from harmonization import REREF_MAP, RENAME_MAP, rename, rereference
+from .harmonization import REREF_MAP, RENAME_MAP, rename, rereference
 
 class PhysioNetSleepFMConverter:
     """

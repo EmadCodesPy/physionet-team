@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from converter import PhysioNetSleepFMConverter
+from .converter import PhysioNetSleepFMConverter
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
