@@ -25,7 +25,7 @@ class SleepFMEmbedder:
 
     def __init__(
         self,
-        sleepfm_root=f"{ROOT}/physio/sleepfm",
+        sleepfm_root=f"{ROOT}/sleepfm",
         checkpoint="model_base",
         device=None,
         sample_rate=128,
@@ -45,7 +45,6 @@ class SleepFMEmbedder:
         self.channel_groups = load_data(
             os.path.join(
                 sleepfm_root,
-
                 "configs",
                 "channel_groups.json",
             )
