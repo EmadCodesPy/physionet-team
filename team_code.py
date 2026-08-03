@@ -81,15 +81,32 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
             # Load signal data.
 
             # Load the physiological signal.
-            # physiological_data_file = os.path.join(data_folder, PHYSIOLOGICAL_DATA_SUBFOLDER, site_id, f"{patient_id}_ses-{session_id}.edf")
-            # # --- Check if the file actually exists before proceeding ---
-            # if not os.path.exists(physiological_data_file):
-            #     if verbose:
-            #         print(f"  ! Missing physiological data for {patient_id}. Skipping...")
-            #     continue # skip record
-            # physiological_data, physiological_fs = load_signal_data(physiological_data_file)
-            # physiological_features = extract_physiological_features(physiological_data, physiological_fs, csv_path=csv_path) # This function can rename, re-reference, resample, etc. the signal data.
+            physiological_data_file = os.path.join(
+                data_folder,
+                PHYSIOLOGICAL_DATA_SUBFOLDER,
+                site_id,
+                f"{patient_id}_ses-{session_id}.edf",
+            )
 
+            if not os.path.exists(physiological_data_file):
+                if verbose:
+                    print(f"  ! Missing physiological data for {patient_id}. Skipping...")
+                continue
+
+            physiological_data, physiological_fs = load_signal_data(
+                physiological_data_file
+            )
+
+            sleepfm_embeddings = extract_physiological_features(
+                physiological_data,
+                physiological_fs,
+            )
+            sleepfm_features = np.hstack([
+            sleepfm_embeddings["bas_pool"].mean(axis=0),
+            sleepfm_embeddings["resp_pool"].mean(axis=0),
+            sleepfm_embeddings["ekg_pool"].mean(axis=0),
+            sleepfm_embeddings["emg_pool"].mean(axis=0),
+        ])
             # Load the algorithmic annotations.
             algorithmic_annotations_file = os.path.join(data_folder, ALGORITHMIC_ANNOTATIONS_SUBFOLDER, site_id, f"{patient_id}_ses-{session_id}_caisr_annotations.edf")
             algorithmic_annotations, algorithmic_fs = load_signal_data(algorithmic_annotations_file)
@@ -108,7 +125,7 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
             # the human annotations are not available on the hidden validation and test sets, but you
             # may want to consider how to use them for training.
             if label == 0 or label == 1:
-                features.append(np.hstack([demographic_features, algorithmic_features]))
+                features.append(np.hstack([sleepfm_features, demographic_features, algorithmic_features]))
                 labels.append(label)
 
             # if 'physiological_data' in locals(): del physiological_data
@@ -414,156 +431,202 @@ def extract_demographic_features(data):
     
     return np.concatenate([age, sex_vec, race_vec, bmi])
 
+from physio.embedder import SleepFMEmbedder
+
+
+_SLEEPFM = None
+
+
+def get_sleepfm_embedder():
+    global _SLEEPFM
+
+    if _SLEEPFM is None:
+        _SLEEPFM = SleepFMEmbedder()
+
+    return _SLEEPFM
+
+def extract_sleepfm_embeddings(
+    physiological_data,
+    physiological_fs,
+    site,
+):
+    return get_sleepfm_embedder().embed(
+        physiological_data,
+        physiological_fs,
+        site,
+    )
+
+def extract_sleepfm_embeddings(physiological_data, physiological_fs, site):
+    """
+    Generate SleepFM embeddings for a single EDF file.
+
+    Parameters
+    ----------
+    edf_path : str or pathlib.Path
+        Path to the EDF recording.
+
+    Returns
+    -------
+    dict
+        SleepFM embeddings.
+    """
+    return get_sleepfm_embedder().extract_embeddings(physiological_data, physiological_fs, site)
+
 def extract_physiological_features(physiological_data, physiological_fs, csv_path=DEFAULT_CSV_PATH):
     """
     Standardizes channels and extracts statistical/spectral features.
     """
-    original_labels = list(physiological_data.keys())
+    # original_labels = list(physiological_data.keys())
 
-    # Step 1: Load rules and standardize names
-    # Note: Use script-relative path or absolute path for robustness
-    rename_rules = load_rename_rules(os.path.abspath(csv_path))
-    rename_map, cols_to_drop = standardize_channel_names_rename_only(original_labels, rename_rules)
+    # # Step 1: Load rules and standardize names
+    # # Note: Use script-relative path or absolute path for robustness
+    # rename_rules = load_rename_rules(os.path.abspath(csv_path))
+    # rename_map, cols_to_drop = standardize_channel_names_rename_only(original_labels, rename_rules)
 
-    # Step 2: Apply renaming to BOTH signals and their corresponding FS
-    processed_channels = {}
-    processed_fs = {}
-    for old_label, data in physiological_data.items():
-        if old_label in cols_to_drop:
-            continue
-        new_label = rename_map.get(old_label, old_label.lower())
-        processed_channels[new_label] = data
-        # Mapping the sampling rate to the new label
-        if old_label in physiological_fs:
-            processed_fs[new_label] = physiological_fs[old_label]
-        else:
-            # Report error and stop if no FS is found for a kept channel
-            raise KeyError(f"Sampling frequency (fs) not found for channel '{old_label}' ")
+    # # Step 2: Apply renaming to BOTH signals and their corresponding FS
+    # processed_channels = {}
+    # processed_fs = {}
+    # for old_label, data in physiological_data.items():
+    #     if old_label in cols_to_drop:
+    #         continue
+    #     new_label = rename_map.get(old_label, old_label.lower())
+    #     processed_channels[new_label] = data
+    #     # Mapping the sampling rate to the new label
+    #     if old_label in physiological_fs:
+    #         processed_fs[new_label] = physiological_fs[old_label]
+    #     else:
+    #         # Report error and stop if no FS is found for a kept channel
+    #         raise KeyError(f"Sampling frequency (fs) not found for channel '{old_label}' ")
         
-    if 'physiological_data' in locals(): del physiological_data
+    # if 'physiological_data' in locals(): del physiological_data
 
-    # Step 3: Construct Bipolar Derivations
-    bipolar_configs = [
-        ('f3-m2', 'f3', ['m2']), ('f4-m1', 'f4', ['m1']),
-        ('c3-m2', 'c3', ['m2']), ('c4-m1', 'c4', ['m1']),
-        ('o1-m2', 'o1', ['m2']), ('o2-m1', 'o2', ['m1']),
-        ('e1-m2', 'e1', ['m2']), ('e2-m1', 'e2', ['m1']),
-        ('chin1-chin2', 'chin 1', ['chin 2']),
-        ('lat', 'lleg+', ['lleg-']), ('rat', 'rleg+', ['rleg-'])
-    ]
+    # # Step 3: Construct Bipolar Derivations
+    # bipolar_configs = [
+    #     ('f3-m2', 'f3', ['m2']), ('f4-m1', 'f4', ['m1']),
+    #     ('c3-m2', 'c3', ['m2']), ('c4-m1', 'c4', ['m1']),
+    #     ('o1-m2', 'o1', ['m2']), ('o2-m1', 'o2', ['m1']),
+    #     ('e1-m2', 'e1', ['m2']), ('e2-m1', 'e2', ['m1']),
+    #     ('chin1-chin2', 'chin 1', ['chin 2']),
+    #     ('lat', 'lleg+', ['lleg-']), ('rat', 'rleg+', ['rleg-'])
+    # ]
 
-    for target, pos, neg_list in bipolar_configs:
-        # 1. Skip if target already exists or pos channel missing
-        if target in processed_channels or pos not in processed_channels:
-            continue
+    # for target, pos, neg_list in bipolar_configs:
+    #     # 1. Skip if target already exists or pos channel missing
+    #     if target in processed_channels or pos not in processed_channels:
+    #         continue
         
-        # 2. Check all neg channels exist
-        if not all(n in processed_channels for n in neg_list):
-            continue
+    #     # 2. Check all neg channels exist
+    #     if not all(n in processed_channels for n in neg_list):
+    #         continue
 
-        # 3. Check sampling rate consistency
-        all_involved = [pos] + neg_list
-        fs_values = [processed_fs[ch] for ch in all_involved]
+    #     # 3. Check sampling rate consistency
+    #     all_involved = [pos] + neg_list
+    #     fs_values = [processed_fs[ch] for ch in all_involved]
         
-        if len(set(fs_values)) > 1:
-            raise ValueError(f"Sampling rate mismatch for {target}: {dict(zip(all_involved, fs_values))}")
+    #     if len(set(fs_values)) > 1:
+    #         raise ValueError(f"Sampling rate mismatch for {target}: {dict(zip(all_involved, fs_values))}")
 
-        # 4. Derive bipolar signal
-        ref_sig = processed_channels[neg_list[0]] if len(neg_list) == 1 else tuple(processed_channels[n] for n in neg_list)
+    #     # 4. Derive bipolar signal
+    #     ref_sig = processed_channels[neg_list[0]] if len(neg_list) == 1 else tuple(processed_channels[n] for n in neg_list)
         
-        derived = derive_bipolar_signal(processed_channels[pos], ref_sig)
+    #     derived = derive_bipolar_signal(processed_channels[pos], ref_sig)
         
-        if derived is not None:
-            processed_channels[target] = derived
-            processed_fs[target] = processed_fs[pos]
+    #     if derived is not None:
+    #         processed_channels[target] = derived
+    #         processed_fs[target] = processed_fs[pos]
 
-    leads_to_check = {
-        'eeg':  ['f3-m2', 'f4-m1', 'c3-m2', 'c4-m1'],
-        'eog':  ['e1-m2', 'e2-m1'],
-        'chin': ['chin1-chin2', 'chin'],
-        'leg':  ['lat', 'rat'],
-        'ecg':  ['ecg', 'ekg'],
-        'resp': ['airflow', 'ptaf', 'abd', 'chest'],
-        'spo2': ['spo2', 'sao2'] # Added sao2 as fallback for spo2
-    }
+    # leads_to_check = {
+    #     'eeg':  ['f3-m2', 'f4-m1', 'c3-m2', 'c4-m1'],
+    #     'eog':  ['e1-m2', 'e2-m1'],
+    #     'chin': ['chin1-chin2', 'chin'],
+    #     'leg':  ['lat', 'rat'],
+    #     'ecg':  ['ecg', 'ekg'],
+    #     'resp': ['airflow', 'ptaf', 'abd', 'chest'],
+    #     'spo2': ['spo2', 'sao2'] # Added sao2 as fallback for spo2
+    # }
     
-    final_features = []
-    for lead_type, candidates in leads_to_check.items():
-        sig = None
-        fs = None
+    # final_features = []
+    # for lead_type, candidates in leads_to_check.items():
+    #     sig = None
+    #     fs = None
         
-        # Identify the first available candidate
-        for candidate in candidates:
-            if candidate in processed_channels and processed_channels[candidate] is not None:
-                sig = processed_channels[candidate]
-                fs = processed_fs.get(candidate)
-                break 
+    #     # Identify the first available candidate
+    #     for candidate in candidates:
+    #         if candidate in processed_channels and processed_channels[candidate] is not None:
+    #             sig = processed_channels[candidate]
+    #             fs = processed_fs.get(candidate)
+    #             break 
 
-        # if sig is not None and len(sig) > 0 and fs is not None:
-        #     # --- 1. Time Domain Features ---
-        #     std_val = np.std(sig)
-        #     mav_val = np.mean(np.abs(sig))
-        #     energy_val = np.sum(sig**2) / len(sig)
+    #     # if sig is not None and len(sig) > 0 and fs is not None:
+    #     #     # --- 1. Time Domain Features ---
+    #     #     std_val = np.std(sig)
+    #     #     mav_val = np.mean(np.abs(sig))
+    #     #     energy_val = np.sum(sig**2) / len(sig)
             
-        #     # --- 2. Frequency Domain Features (Spectral) ---
-        #     n = len(sig)
-        #     # Correct spacing for frequency axis based on channel-specific fs
-        #     freqs = np.fft.rfftfreq(n, d=1/fs)
+    #     #     # --- 2. Frequency Domain Features (Spectral) ---
+    #     #     n = len(sig)
+    #     #     # Correct spacing for frequency axis based on channel-specific fs
+    #     #     freqs = np.fft.rfftfreq(n, d=1/fs)
             
-        #     # Compute Power Spectral Density (PSD)
-        #     # Multiplied by 2 for rfft (except DC/Nyquist) and divided by fs for density
-        #     fft_res = np.abs(np.fft.rfft(sig))
-        #     psd = (fft_res**2) / (n * fs)
+    #     #     # Compute Power Spectral Density (PSD)
+    #     #     # Multiplied by 2 for rfft (except DC/Nyquist) and divided by fs for density
+    #     #     fft_res = np.abs(np.fft.rfft(sig))
+    #     #     psd = (fft_res**2) / (n * fs)
             
-        #     # Define band masks
-        #     delta_mask = (freqs >= 0.5) & (freqs <= 4)
-        #     theta_mask = (freqs > 4) & (freqs <= 8)
-        #     alpha_mask = (freqs > 8) & (freqs <= 12)
+    #     #     # Define band masks
+    #     #     delta_mask = (freqs >= 0.5) & (freqs <= 4)
+    #     #     theta_mask = (freqs > 4) & (freqs <= 8)
+    #     #     alpha_mask = (freqs > 8) & (freqs <= 12)
             
-        #     # Calculate power in bands using trapezoidal integration for physical accuracy
-        #     delta_p = np.trapezoid(psd[delta_mask], freqs[delta_mask]) if np.any(delta_mask) else 0.0
-        #     theta_p = np.trapezoid(psd[theta_mask], freqs[theta_mask]) if np.any(theta_mask) else 0.0
-        #     alpha_p = np.trapezoid(psd[alpha_mask], freqs[alpha_mask]) if np.any(alpha_mask) else 0.0
+    #     #     # Calculate power in bands using trapezoidal integration for physical accuracy
+    #     #     delta_p = np.trapezoid(psd[delta_mask], freqs[delta_mask]) if np.any(delta_mask) else 0.0
+    #     #     theta_p = np.trapezoid(psd[theta_mask], freqs[theta_mask]) if np.any(theta_mask) else 0.0
+    #     #     alpha_p = np.trapezoid(psd[alpha_mask], freqs[alpha_mask]) if np.any(alpha_mask) else 0.0
             
-        #     # Ratio biomarker: Delta/Theta (Indicator of cognitive slowing)
-        #     dt_ratio = delta_p / theta_p if theta_p > 0 else 0.0
+    #     #     # Ratio biomarker: Delta/Theta (Indicator of cognitive slowing)
+    #     #     dt_ratio = delta_p / theta_p if theta_p > 0 else 0.0
 
-        #     final_features.extend([std_val, mav_val, energy_val, delta_p, theta_p, alpha_p, dt_ratio])
+    #     #     final_features.extend([std_val, mav_val, energy_val, delta_p, theta_p, alpha_p, dt_ratio])
 
-        if sig is not None and len(sig) > 1:
-            # --- Time Domain Features (Very Fast) ---
-            std_val = np.std(sig)
-            mav_val = np.mean(np.abs(sig))
+    #     if sig is not None and len(sig) > 1:
+    #         # --- Time Domain Features (Very Fast) ---
+    #         std_val = np.std(sig)
+    #         mav_val = np.mean(np.abs(sig))
             
-            # Zero Crossing Rate (Proxy for frequency/slowing)
-            zcr = np.mean(np.diff(np.sign(sig)) != 0)
+    #         # Zero Crossing Rate (Proxy for frequency/slowing)
+    #         zcr = np.mean(np.diff(np.sign(sig)) != 0)
             
-            # Root Mean Square
-            rms = np.sqrt(np.mean(sig**2))
+    #         # Root Mean Square
+    #         rms = np.sqrt(np.mean(sig**2))
             
-            # Signal Activity (Variance)
-            activity = np.var(sig)
+    #         # Signal Activity (Variance)
+    #         activity = np.var(sig)
             
-            # Mobility (Hjorth Parameter) - Proxy for mean frequency
-            # sqrt(var(diff(sig)) / var(sig))
-            diff_sig = np.diff(sig)
-            mobility = np.sqrt(np.var(diff_sig) / activity) if activity > 0 else 0.0
+    #         # Mobility (Hjorth Parameter) - Proxy for mean frequency
+    #         # sqrt(var(diff(sig)) / var(sig))
+    #         diff_sig = np.diff(sig)
+    #         mobility = np.sqrt(np.var(diff_sig) / activity) if activity > 0 else 0.0
 
-            # Complexity (Hjorth Parameter) - Proxy for bandwidth
-            diff2_sig = np.diff(diff_sig)
-            var_d2 = np.var(diff2_sig)
-            var_d1 = np.var(diff_sig)
-            complexity = (np.sqrt(var_d2 / var_d1) / mobility) if (var_d1 > 0 and mobility > 0) else 0.0
+    #         # Complexity (Hjorth Parameter) - Proxy for bandwidth
+    #         diff2_sig = np.diff(diff_sig)
+    #         var_d2 = np.var(diff2_sig)
+    #         var_d1 = np.var(diff_sig)
+    #         complexity = (np.sqrt(var_d2 / var_d1) / mobility) if (var_d1 > 0 and mobility > 0) else 0.0
 
-            final_features.extend([std_val, mav_val, zcr, rms, activity, mobility, complexity])
+    #         final_features.extend([std_val, mav_val, zcr, rms, activity, mobility, complexity])
 
-        else:
-            # Padding: 7 features per lead type
-            final_features.extend([0.0] * 7)
+    #     else:
+    #         # Padding: 7 features per lead type
+    #         final_features.extend([0.0] * 7)
 
-    if 'processed_channels' in locals(): del processed_channels
+    # if 'processed_channels' in locals(): del processed_channels
 
-    return np.array(final_features)
+    # return np.array(final_features)
+    
+    return get_sleepfm_embedder().extract_embeddings(
+        physiological_data=physiological_data,
+        physiological_fs=physiological_fs,
+    )
 
 def extract_algorithmic_annotations_features(algo_data):
     """
@@ -723,9 +786,9 @@ def save_model(model_folder, model):
     filename = os.path.join(model_folder, 'model.sav')
     joblib.dump(d, filename, protocol=0)
     
-DATA_FOLDER  = "/mnt/ml/datasets/physionet_data/training_set"
+# DATA_FOLDER  = "/mnt/ml/datasets/physionet_data/training_set"
 
-fold_results, mean_auroc, std_auroc = run_loso_cross_validation(
-    data_folder=DATA_FOLDER,
-    verbose=True
-)
+# fold_results, mean_auroc, std_auroc = run_loso_cross_validation(
+#     data_folder=DATA_FOLDER,
+#     verbose=True
+# )
