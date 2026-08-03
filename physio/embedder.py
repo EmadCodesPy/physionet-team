@@ -34,7 +34,6 @@ class SleepFMEmbedder:
         self.sleepfm_root = sleepfm_root
         self.model_path = os.path.join(
             sleepfm_root,
-            "sleepfm",
             "checkpoints",
             checkpoint,
         )
@@ -46,7 +45,7 @@ class SleepFMEmbedder:
         self.channel_groups = load_data(
             os.path.join(
                 sleepfm_root,
-                "sleepfm",
+
                 "configs",
                 "channel_groups.json",
             )
