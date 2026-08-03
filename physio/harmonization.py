@@ -89,15 +89,9 @@ def rereference(channels, site):
     return channels
 
 def rename(channels, site):
-
-    rename_map = RENAME_MAP.get(site, {})
-
+    rename_map = {k.lower(): v for k, v in RENAME_MAP.get(site, {}).items()}
     renamed = {}
-
     for name, value in channels.items():
-
-        new_name = rename_map.get(name, name)
-
+        new_name = rename_map.get(name.lower(), name)
         renamed[new_name] = value
-
     return renamed
