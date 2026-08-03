@@ -154,7 +154,7 @@ class SleepFMEmbedder:
     # Public API
     # ========================================================
 
-    def infer_site(channel_names):
+    def infer_site(self, channel_names):
         names = set(channel_names)
 
         # I0006
