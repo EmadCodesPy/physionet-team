@@ -125,7 +125,7 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
             # the human annotations are not available on the hidden validation and test sets, but you
             # may want to consider how to use them for training.
             if label == 0 or label == 1:
-                features.append(np.hstack([sleepfm_features, demographic_features, algorithmic_features]))
+                features.append(np.hstack([demographic_features, algorithmic_features, sleepfm_features]))
                 labels.append(label)
 
             # if 'physiological_data' in locals(): del physiological_data
@@ -203,14 +203,32 @@ def run_model(model, record, data_folder, verbose):
     demographic_features = extract_demographic_features(patient_data)
 
     # # Load signal data.
-    # phys_file = os.path.join(data_folder, PHYSIOLOGICAL_DATA_SUBFOLDER, site_id, f"{patient_id}_ses-{session_id}.edf")
-    # if os.path.exists(phys_file):
-    #     phys_data, phys_fs = load_signal_data(phys_file)
-    #     # Ensure csv_path is accessible or defined
-    #     physiological_features = extract_physiological_features(phys_data, phys_fs)
-    # else:
-    #     # Fallback to zeros if file is missing (length 49)
-    #     physiological_features = np.zeros(49)
+    # Load physiological signal
+    phys_file = os.path.join(
+        data_folder,
+        PHYSIOLOGICAL_DATA_SUBFOLDER,
+        site_id,
+        f"{patient_id}_ses-{session_id}.edf",
+    )
+
+    if os.path.exists(phys_file):
+        phys_data, phys_fs = load_signal_data(phys_file)
+
+        sleepfm_embeddings = extract_physiological_features(
+            phys_data,
+            phys_fs,
+        )
+
+        sleepfm_features = np.hstack([
+            sleepfm_embeddings["bas_pool"].mean(axis=0),
+            sleepfm_embeddings["resp_pool"].mean(axis=0),
+            sleepfm_embeddings["ekg_pool"].mean(axis=0),
+            sleepfm_embeddings["emg_pool"].mean(axis=0),
+        ])
+
+    else:
+        # Same length as above (4 × 128)
+        sleepfm_features = np.zeros(512, dtype=np.float32)
 
     # Load Algorithmic Annotations
     algo_file = os.path.join(data_folder, ALGORITHMIC_ANNOTATIONS_SUBFOLDER, site_id, f"{patient_id}_ses-{session_id}_caisr_annotations.edf")
@@ -219,9 +237,9 @@ def run_model(model, record, data_folder, verbose):
         algorithmic_features = extract_algorithmic_annotations_features(algo_data)
     else:
         # Fallback to zeros (length 12)
-        algorithmic_features = np.full(25, np.nan)
+        algorithmic_features = np.zeros(25, dtype=np.float32)
 
-    features = np.hstack([demographic_features, algorithmic_features]).reshape(1, -1)
+    features = np.hstack([demographic_features, algorithmic_features, sleepfm_features]).reshape(1, -1)
 
     # Get the model outputs.
     binary_output = model.predict(features)[0]
