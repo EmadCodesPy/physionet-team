@@ -87,7 +87,7 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
                 site_id,
                 f"{patient_id}_ses-{session_id}.edf",
             )
-            print(list(physiological_data.keys()))
+            
             if not os.path.exists(physiological_data_file):
                 if verbose:
                     print(f"  ! Missing physiological data for {patient_id}. Skipping...")
@@ -101,6 +101,7 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
                 physiological_data,
                 physiological_fs,
             )
+            print(list(physiological_data.keys()))
             sleepfm_features = np.hstack([
             sleepfm_embeddings["bas_pool"].mean(axis=0),
             sleepfm_embeddings["resp_pool"].mean(axis=0),
