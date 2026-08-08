@@ -107,6 +107,16 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
             sleepfm_embeddings["ekg_pool"].mean(axis=0),
             sleepfm_embeddings["emg_pool"].mean(axis=0),
         ])
+            if verbose:
+                tqdm.write(f"  [{patient_id}] embedding shapes: " + ", ".join(
+                    f"{k}={v.shape}" for k, v in sleepfm_embeddings.items()
+                ))
+                tqdm.write(
+                    f"  [{patient_id}] sleepfm_features: shape={sleepfm_features.shape}, "
+                    f"mean={sleepfm_features.mean():.4f}, std={sleepfm_features.std():.4f}, "
+                    f"nan_count={np.isnan(sleepfm_features).sum()}, "
+                    f"first5={np.round(sleepfm_features[:5], 4)}"
+    )
             # Load the algorithmic annotations.
             algorithmic_annotations_file = os.path.join(data_folder, ALGORITHMIC_ANNOTATIONS_SUBFOLDER, site_id, f"{patient_id}_ses-{session_id}_caisr_annotations.edf")
             algorithmic_annotations, algorithmic_fs = load_signal_data(algorithmic_annotations_file)
@@ -144,15 +154,6 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
     # Train the models on the features.
     if verbose:
         print('Training the model on the data...')
-        tqdm.write(f"  [{patient_id}] embedding shapes: " + ", ".join(
-        f"{k}={v.shape}" for k, v in sleepfm_embeddings.items()
-        ))
-        tqdm.write(
-            f"  [{patient_id}] sleepfm_features: shape={sleepfm_features.shape}, "
-            f"mean={sleepfm_features.mean():.4f}, std={sleepfm_features.std():.4f}, "
-            f"nan_count={np.isnan(sleepfm_features).sum()}, "
-            f"first5={np.round(sleepfm_features[:5], 4)}"
-    )
 
     # This very simple model trains a random forest model with very simple features.
 
