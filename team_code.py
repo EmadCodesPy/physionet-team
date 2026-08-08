@@ -238,7 +238,7 @@ def run_model(model, record, data_folder, verbose):
 
     else:
         # Same length as above (4 × 128)
-        sleepfm_features = np.zeros(512, dtype=np.float32)
+        sleepfm_features = np.full(512, np.nan)
 
     # Load Algorithmic Annotations
     algo_file = os.path.join(data_folder, ALGORITHMIC_ANNOTATIONS_SUBFOLDER, site_id, f"{patient_id}_ses-{session_id}_caisr_annotations.edf")
@@ -247,7 +247,7 @@ def run_model(model, record, data_folder, verbose):
         algorithmic_features = extract_algorithmic_annotations_features(algo_data)
     else:
         # Fallback to zeros (length 12)
-        algorithmic_features = np.zeros(25, dtype=np.float32)
+        algorithmic_features = np.full(25, np.nan)
 
     features = np.hstack([demographic_features, algorithmic_features, sleepfm_features]).reshape(1, -1)
 
