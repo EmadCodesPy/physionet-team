@@ -463,17 +463,6 @@ def get_sleepfm_embedder():
 
     return _SLEEPFM
 
-def extract_sleepfm_embeddings(
-    physiological_data,
-    physiological_fs,
-    site,
-):
-    return get_sleepfm_embedder().embed(
-        physiological_data,
-        physiological_fs,
-        site,
-    )
-
 def extract_sleepfm_embeddings(physiological_data, physiological_fs, site):
     """
     Generate SleepFM embeddings for a single EDF file.
