@@ -77,7 +77,7 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
             patient_data_file = os.path.join(data_folder, DEMOGRAPHICS_FILE)
             patient_data = load_demographics(patient_data_file, patient_id, session_id)
             demographic_features = extract_demographic_features(patient_data)
-
+            
             # Load signal data.
 
             # Load the physiological signal.
@@ -87,7 +87,7 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
                 site_id,
                 f"{patient_id}_ses-{session_id}.edf",
             )
-
+            print(list(physiological_data.keys()))
             if not os.path.exists(physiological_data_file):
                 if verbose:
                     print(f"  ! Missing physiological data for {patient_id}. Skipping...")

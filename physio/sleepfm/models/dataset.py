@@ -40,6 +40,7 @@ def index_file_helper(args):
             for modality, channels in modality_to_channels.items():
                 if len(channels) == 0:
                     flag = False
+                    print(f"{file_path}: empty modality {modality}\n")
                     break
             if flag:
                 num_samples = hf[dset_name].shape[0]
