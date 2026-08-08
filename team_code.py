@@ -101,7 +101,6 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
                 physiological_data,
                 physiological_fs,
             )
-            print(list(physiological_data.keys()))
             sleepfm_features = np.hstack([
             sleepfm_embeddings["bas_pool"].mean(axis=0),
             sleepfm_embeddings["resp_pool"].mean(axis=0),
@@ -145,6 +144,15 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
     # Train the models on the features.
     if verbose:
         print('Training the model on the data...')
+        tqdm.write(f"  [{patient_id}] embedding shapes: " + ", ".join(
+        f"{k}={v.shape}" for k, v in sleepfm_embeddings.items()
+        ))
+        tqdm.write(
+            f"  [{patient_id}] sleepfm_features: shape={sleepfm_features.shape}, "
+            f"mean={sleepfm_features.mean():.4f}, std={sleepfm_features.std():.4f}, "
+            f"nan_count={np.isnan(sleepfm_features).sum()}, "
+            f"first5={np.round(sleepfm_features[:5], 4)}"
+    )
 
     # This very simple model trains a random forest model with very simple features.
 
