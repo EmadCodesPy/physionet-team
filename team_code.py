@@ -77,7 +77,7 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
             patient_data_file = os.path.join(data_folder, DEMOGRAPHICS_FILE)
             patient_data = load_demographics(patient_data_file, patient_id, session_id)
             demographic_features = extract_demographic_features(patient_data)
-
+            
             # Load signal data.
 
             # Load the physiological signal.
@@ -87,7 +87,7 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
                 site_id,
                 f"{patient_id}_ses-{session_id}.edf",
             )
-
+            
             if not os.path.exists(physiological_data_file):
                 if verbose:
                     print(f"  ! Missing physiological data for {patient_id}. Skipping...")
@@ -107,6 +107,16 @@ def train_model(data_folder, model_folder, verbose, csv_path=DEFAULT_CSV_PATH):
             sleepfm_embeddings["ekg_pool"].mean(axis=0),
             sleepfm_embeddings["emg_pool"].mean(axis=0),
         ])
+            if verbose:
+                tqdm.write(f"  [{patient_id}] embedding shapes: " + ", ".join(
+                    f"{k}={v.shape}" for k, v in sleepfm_embeddings.items()
+                ))
+                tqdm.write(
+                    f"  [{patient_id}] sleepfm_features: shape={sleepfm_features.shape}, "
+                    f"mean={sleepfm_features.mean():.4f}, std={sleepfm_features.std():.4f}, "
+                    f"nan_count={np.isnan(sleepfm_features).sum()}, "
+                    f"first5={np.round(sleepfm_features[:5], 4)}"
+    )
             # Load the algorithmic annotations.
             algorithmic_annotations_file = os.path.join(data_folder, ALGORITHMIC_ANNOTATIONS_SUBFOLDER, site_id, f"{patient_id}_ses-{session_id}_caisr_annotations.edf")
             algorithmic_annotations, algorithmic_fs = load_signal_data(algorithmic_annotations_file)
@@ -462,17 +472,6 @@ def get_sleepfm_embedder():
         _SLEEPFM = SleepFMEmbedder()
 
     return _SLEEPFM
-
-def extract_sleepfm_embeddings(
-    physiological_data,
-    physiological_fs,
-    site,
-):
-    return get_sleepfm_embedder().embed(
-        physiological_data,
-        physiological_fs,
-        site,
-    )
 
 def extract_sleepfm_embeddings(physiological_data, physiological_fs, site):
     """

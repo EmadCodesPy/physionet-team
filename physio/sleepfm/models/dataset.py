@@ -17,48 +17,192 @@ from loguru import logger
 from einops import rearrange
 
 
+# def index_file_helper(args):
+#     file_path, channel_like, chunk_size, channel_groups, modality_types = args
+#     file_index_map = []
+#     modality_to_channels = {modality_type: [] for modality_type in modality_types}
+#     try:
+#         with h5py.File(file_path, 'r', rdcc_nbytes = 300 * 512 * 8 * 2) as hf:
+#             dset_names = []
+#             for dset_name in hf.keys():
+#                 if not channel_like or dset_name in channel_like:
+#                     if isinstance(hf[dset_name], h5py.Dataset):
+#                         dset_names.append(dset_name)
+#                         if dset_name in channel_groups["BAS"]:
+#                             modality_to_channels["BAS"].append(dset_name)
+#                         if dset_name in channel_groups["RESP"]:
+#                             modality_to_channels["RESP"].append(dset_name)
+#                         if dset_name in channel_groups["EKG"]:
+#                             modality_to_channels["EKG"].append(dset_name)
+#                         if dset_name in channel_groups["EMG"]:
+#                             modality_to_channels["EMG"].append(dset_name)
+#             flag = True
+#             for modality, channels in modality_to_channels.items():
+#                 if len(channels) == 0:
+#                     flag = False
+#                     break
+#             if flag:
+#                 num_samples = hf[dset_name].shape[0]
+#                 num_chunks = num_samples // chunk_size
+#                 for chunk_start in range(0, num_chunks * chunk_size, chunk_size):
+#                     file_index_map.append((file_path, dset_names, chunk_start))
+#     except (OSError, AttributeError) as e:
+#         with open("problem_hdf5.txt", "a") as f:
+#             f.write(f"Error processing file {file_path}: {str(e)}\n")
+#     return file_index_map
+
+# def index_files(hdf5_paths, channel_like, samples_per_chunk, num_workers, channel_groups=None, modality_types=None):
+#     with multiprocessing.Pool(processes=num_workers) as pool:
+#         results = list(tqdm(pool.imap(index_file_helper, [(path, channel_like, samples_per_chunk, channel_groups, modality_types) for path in hdf5_paths]), total=len(hdf5_paths), desc="Indexing files", position=0, leave=True))
+#     return [item for sublist in results for item in sublist]
+
+def _build_lower_channel_groups(channel_groups):
+    """
+    One-time helper: returns {modality: set(lowercased channel names)}.
+    Do the .lower() work once here, not on every comparison.
+    """
+    return {
+        modality: {name.lower() for name in names}
+        for modality, names in channel_groups.items()
+    }
+
+
 def index_file_helper(args):
     file_path, channel_like, chunk_size, channel_groups, modality_types = args
     file_index_map = []
     modality_to_channels = {modality_type: [] for modality_type in modality_types}
+
+    # channel_groups_lower and channel_like are already lowercased when passed in
+    # (see index_files / __init__ below) — no re-lowering needed here.
+
     try:
-        with h5py.File(file_path, 'r', rdcc_nbytes = 300 * 512 * 8 * 2) as hf:
+        with h5py.File(file_path, 'r', rdcc_nbytes=300 * 512 * 8 * 2) as hf:
             dset_names = []
             for dset_name in hf.keys():
-                if not channel_like or dset_name in channel_like:
+                dset_name_lower = dset_name.lower()
+                if not channel_like or dset_name_lower in channel_like:
                     if isinstance(hf[dset_name], h5py.Dataset):
                         dset_names.append(dset_name)
-                        if dset_name in channel_groups["BAS"]:
+                        if dset_name_lower in channel_groups["BAS"]:
                             modality_to_channels["BAS"].append(dset_name)
-                        if dset_name in channel_groups["RESP"]:
+                        if dset_name_lower in channel_groups["RESP"]:
                             modality_to_channels["RESP"].append(dset_name)
-                        if dset_name in channel_groups["EKG"]:
+                        if dset_name_lower in channel_groups["EKG"]:
                             modality_to_channels["EKG"].append(dset_name)
-                        if dset_name in channel_groups["EMG"]:
+                        if dset_name_lower in channel_groups["EMG"]:
                             modality_to_channels["EMG"].append(dset_name)
+
             flag = True
             for modality, channels in modality_to_channels.items():
                 if len(channels) == 0:
                     flag = False
+                    # keep your logging from before — don't drop this
+                    with open("problem_hdf5.txt", "a") as f:
+                        f.write(f"{file_path}: empty modality {modality}\n")
                     break
+
             if flag:
                 num_samples = hf[dset_name].shape[0]
                 num_chunks = num_samples // chunk_size
                 for chunk_start in range(0, num_chunks * chunk_size, chunk_size):
                     file_index_map.append((file_path, dset_names, chunk_start))
+
     except (OSError, AttributeError) as e:
         with open("problem_hdf5.txt", "a") as f:
             f.write(f"Error processing file {file_path}: {str(e)}\n")
+
     return file_index_map
 
+
 def index_files(hdf5_paths, channel_like, samples_per_chunk, num_workers, channel_groups=None, modality_types=None):
+    # Lowercase once, here, before fanning out to worker processes.
+    channel_groups_lower = _build_lower_channel_groups(channel_groups)
+    channel_like_lower = {c.lower() for c in channel_like} if channel_like else channel_like
+
     with multiprocessing.Pool(processes=num_workers) as pool:
-        results = list(tqdm(pool.imap(index_file_helper, [(path, channel_like, samples_per_chunk, channel_groups, modality_types) for path in hdf5_paths]), total=len(hdf5_paths), desc="Indexing files", position=0, leave=True))
+        results = list(tqdm(
+            pool.imap(
+                index_file_helper,
+                [(path, channel_like_lower, samples_per_chunk, channel_groups_lower, modality_types) for path in hdf5_paths]
+            ),
+            total=len(hdf5_paths), desc="Indexing files", position=0, leave=True
+        ))
     return [item for sublist in results for item in sublist]
 
 
+# class SetTransformerDataset(Dataset):
+#     def __init__(self, 
+#                  config,
+#                  channel_groups,
+#                  hdf5_paths=[],
+#                  split="pretrain"):
+
+#         self.config = config
+#         self.channel_groups = channel_groups
+#         channel_like = []
+#         for modality_type in config["modality_types"]:
+#             channel_like += channel_groups[modality_type]
+#         channel_like = set(channel_like)
+
+#         if len(hdf5_paths) == 0:
+#             data_path = config["data_path"]
+#             hdf5_paths = load_data(config["split_path"])[split]
+#             hdf5_paths = [os.path.join(data_path, path) for path in hdf5_paths]
+
+#         if split in ["pretrain"]:
+#             random.shuffle(hdf5_paths)
+
+#         if config["max_files"]:
+#             self.hdf5_paths = hdf5_paths[:config["max_files"]]
+#         else:
+#             self.hdf5_paths = hdf5_paths
+
+#         if split == "validation":
+#             self.hdf5_paths = self.hdf5_paths[:config["val_size"]]
+        
+#         self.samples_per_chunk = config["sampling_duration"] * 60 * config["sampling_freq"]  
+        
+#         # Use multiprocessing to index files in parallel
+#         self.index_map = index_files(self.hdf5_paths, channel_like, self.samples_per_chunk, config["num_workers"], channel_groups=self.channel_groups, modality_types=config["modality_types"])
+
+#         # random.shuffle(self.hdf5_paths)
+#         # self.index_map = sorted(self.index_map, key=lambda x: (x[1], x[2]))
+#         self.total_len = len(self.index_map)
+#         self.modalities_length = []
+#         for modality_type in self.config["modality_types"]:
+#             self.modalities_length.append(self.config[f'{modality_type}_CHANNELS'])
+
+#     def __len__(self):
+#         return self.total_len
+
+#     def __getitem__(self, idx):
+#         file_path, dset_names, chunk_start = self.index_map[idx]
+
+#         modality_to_channels = {modality_type: [] for modality_type in self.config["modality_types"]}
+#         for dset_name in dset_names:
+#             if dset_name in self.channel_groups["BAS"]:
+#                 modality_to_channels["BAS"].append(dset_name)
+#             if dset_name in self.channel_groups["RESP"]:
+#                 modality_to_channels["RESP"].append(dset_name)
+#             if dset_name in self.channel_groups["EKG"]:
+#                 modality_to_channels["EKG"].append(dset_name)
+#             if dset_name in self.channel_groups["EMG"]:
+#                 modality_to_channels["EMG"].append(dset_name)
+
+#         target = []
+#         with h5py.File(file_path, 'r', rdcc_nbytes=300 * 512 * 8 * 2) as hf:
+#             for modality_type in self.config["modality_types"]:
+#                 num_channels = self.config[f"{modality_type}_CHANNELS"]
+#                 data = np.zeros((len(modality_to_channels[modality_type]), self.samples_per_chunk))
+#                 ds_names = modality_to_channels[modality_type]
+#                 for idx, ds_name in enumerate(ds_names):
+#                     signal = hf[ds_name][chunk_start:chunk_start+self.samples_per_chunk]
+#                     data[idx] = signal
+#                 target.append(torch.from_numpy(data).float())
+#         return target, file_path, dset_names, chunk_start, self.modalities_length
+
 class SetTransformerDataset(Dataset):
-    def __init__(self, 
+    def __init__(self,
                  config,
                  channel_groups,
                  hdf5_paths=[],
@@ -66,6 +210,10 @@ class SetTransformerDataset(Dataset):
 
         self.config = config
         self.channel_groups = channel_groups
+
+        # Lowercase version used for ALL matching from here on.
+        self.channel_groups_lower = _build_lower_channel_groups(channel_groups)
+
         channel_like = []
         for modality_type in config["modality_types"]:
             channel_like += channel_groups[modality_type]
@@ -86,14 +234,17 @@ class SetTransformerDataset(Dataset):
 
         if split == "validation":
             self.hdf5_paths = self.hdf5_paths[:config["val_size"]]
-        
-        self.samples_per_chunk = config["sampling_duration"] * 60 * config["sampling_freq"]  
-        
-        # Use multiprocessing to index files in parallel
-        self.index_map = index_files(self.hdf5_paths, channel_like, self.samples_per_chunk, config["num_workers"], channel_groups=self.channel_groups, modality_types=config["modality_types"])
 
-        # random.shuffle(self.hdf5_paths)
-        # self.index_map = sorted(self.index_map, key=lambda x: (x[1], x[2]))
+        self.samples_per_chunk = config["sampling_duration"] * 60 * config["sampling_freq"]
+
+        # index_files does its own lowercasing internally now (see above) —
+        # pass the raw channel_groups/channel_like through unchanged.
+        self.index_map = index_files(
+            self.hdf5_paths, channel_like, self.samples_per_chunk,
+            config["num_workers"], channel_groups=self.channel_groups,
+            modality_types=config["modality_types"]
+        )
+
         self.total_len = len(self.index_map)
         self.modalities_length = []
         for modality_type in self.config["modality_types"]:
@@ -107,13 +258,14 @@ class SetTransformerDataset(Dataset):
 
         modality_to_channels = {modality_type: [] for modality_type in self.config["modality_types"]}
         for dset_name in dset_names:
-            if dset_name in self.channel_groups["BAS"]:
+            dset_name_lower = dset_name.lower()
+            if dset_name_lower in self.channel_groups_lower["BAS"]:
                 modality_to_channels["BAS"].append(dset_name)
-            if dset_name in self.channel_groups["RESP"]:
+            if dset_name_lower in self.channel_groups_lower["RESP"]:
                 modality_to_channels["RESP"].append(dset_name)
-            if dset_name in self.channel_groups["EKG"]:
+            if dset_name_lower in self.channel_groups_lower["EKG"]:
                 modality_to_channels["EKG"].append(dset_name)
-            if dset_name in self.channel_groups["EMG"]:
+            if dset_name_lower in self.channel_groups_lower["EMG"]:
                 modality_to_channels["EMG"].append(dset_name)
 
         target = []
@@ -123,11 +275,10 @@ class SetTransformerDataset(Dataset):
                 data = np.zeros((len(modality_to_channels[modality_type]), self.samples_per_chunk))
                 ds_names = modality_to_channels[modality_type]
                 for idx, ds_name in enumerate(ds_names):
-                    signal = hf[ds_name][chunk_start:chunk_start+self.samples_per_chunk]
+                    signal = hf[ds_name][chunk_start:chunk_start + self.samples_per_chunk]
                     data[idx] = signal
                 target.append(torch.from_numpy(data).float())
         return target, file_path, dset_names, chunk_start, self.modalities_length
-
 
 def collate_fn(batch):
     # Determine the number of modalities
